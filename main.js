@@ -1,5 +1,5 @@
 // WAJIB ISI URL APPS SCRIPT ANDA DI SINI
-const SCRIPT_URL = "URL_API_GOOGLE_SCRIPT_ANDA_DISINI";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeLmwjgrv39zeSr5pYhuXGKpngkhfLmlFanwhuq9fe-mxd6rKErI2491D3cF5yAvMv/exec";
 
 let masterData = []; 
 let visitData = []; 
