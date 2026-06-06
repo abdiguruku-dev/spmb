@@ -70,7 +70,7 @@ function checkIdleTime() {
         const lastActive = sessionStorage.getItem('lastActiveTime');
         if (lastActive && (Date.now() - parseInt(lastActive) >= IDLE_TIMEOUT)) {
             document.getElementById('btnLogout').click();
-            Swal.fire('Sesi Berakhir', 'Sesi Anda telah berakhir karena tidak ada aktivitas selama 15 menit.', 'warning');
+            Swal.fire('Sesi Berakhir', 'Sesi Anda telah berakhir karena tidak ada aktivitas.', 'warning');
         }
     }
 }
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Event Handler: Buka Modal Profil & Form Update Profil
+// Event Handler Modal Profil
 document.getElementById('btnOpenProfile').addEventListener('click', () => {
     const user = JSON.parse(sessionStorage.getItem('spmb_session'));
     document.getElementById('profNama').innerText = user.nama_lengkap;
@@ -220,14 +220,6 @@ document.getElementById('formProfile').addEventListener('submit', async (e) => {
     }
 });
 
-// Event Delegation untuk Tombol Lapor (Mengatasi Bug Nama dgn Tanda Kutip)
-$(document).on('click', '.btn-lapor-visit', function() {
-    let id = $(this).data('id');
-    let nama = $(this).data('nama');
-    let tim = $(this).data('tim');
-    bukaLaporVisit(id, nama, tim);
-});
-
 function downloadFormatExcel() {
     const ws_data = [
         ["Tim_Alokasi", "Nama_Lengkap", "L_P", "Asal_Sekolah", "Nama_Ayah", "Nama_Ibu", "Alamat", "Tanggal_Mulai", "Batas_Waktu", "Desa_Kelurahan", "Kecamatan"],
@@ -260,12 +252,10 @@ async function tampilkanApp(userData) {
     document.getElementById('loginView').classList.add('spa-hidden'); document.getElementById('appView').classList.remove('spa-hidden');
     document.getElementById('userNameDisplay').innerText = userData.nama_lengkap; document.getElementById('userRoleBadge').innerText = userData.role;
     
-    // Tampilkan Foto Profil jika ada
     if(userData.foto_profil && userData.foto_profil.trim() !== "") {
         document.getElementById('sidebarAvatarIcon').classList.add('hidden');
         const img = document.getElementById('sidebarAvatar');
-        img.src = userData.foto_profil;
-        img.classList.remove('hidden');
+        img.src = userData.foto_profil; img.classList.remove('hidden');
     }
 
     currentUserTeam = userData.tim_visitor || ""; currentUserRole = userData.role; let roleStr = currentUserRole.trim().toLowerCase(); 
@@ -421,7 +411,7 @@ function renderTabel(data) {
 
 async function deleteData(id) {
     const result = await Swal.fire({
-        title: 'Hapus Permanen?', text: `Anda yakin ingin menghapus data ${id} secara permanen? Data yang dihapus tidak bisa dikembalikan.`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Hapus!'
+        title: 'Hapus Permanen?', text: `Yakin ingin menghapus data ${id}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Hapus!'
     });
     if (!result.isConfirmed) return;
     
@@ -481,15 +471,16 @@ function bukaModalLogistik(id) {
 
 if(document.getElementById('formLogistik')) {
     document.getElementById('formLogistik').addEventListener('submit', async (e) => {
-        e.preventDefault(); const btnSubmit = document.getElementById('btnSubmitLogistik'); const formStatus = document.getElementById('logStatus'); 
-        btnSubmit.disabled = true; formStatus.innerText = "Memproses...";
+        e.preventDefault(); 
+        Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        
         const d = masterData.find(m => m.id_pendaftaran === logistikId); const currentUser = JSON.parse(sessionStorage.getItem('spmb_session'));
         let selectedAttr = []; document.querySelectorAll('input[name="chk_logistik_attr"]:checked').forEach(c => selectedAttr.push(c.value));
         const payload = new URLSearchParams(); payload.append('action', 'update_seragam'); payload.append('id_pendaftaran', logistikId); payload.append('ukuran_atas_osis', d.ukuran_atas_osis); payload.append('ukuran_bawah_osis', d.ukuran_bawah_osis); payload.append('ukuran_atas_or', d.ukuran_atas_or); payload.append('ukuran_bawah_or', d.ukuran_bawah_or); payload.append('status_osis', document.getElementById('stat_osis').value); payload.append('status_or', document.getElementById('stat_or').value); payload.append('atribut_lengkap', selectedAttr.join(",")); payload.append('diserahkan_kepada', document.getElementById('diserahkan_kepada').value); payload.append('petugas_seragam', currentUser.nama_lengkap);
         try {
             const res = await fetch(SCRIPT_URL.trim(), { method: 'POST', body: payload }); const r = await res.json();
-            if(r.status === 'success') { showToast('Penyerahan berhasil dicatat!'); document.getElementById('logistikModal').classList.add('spa-hidden'); loadMasterData(false); } else { Swal.fire('Gagal', r.message, 'error'); }
-        } catch (err) { Swal.fire('Error', 'Terjadi kesalahan jaringan.', 'error'); } finally { btnSubmit.disabled = false; formStatus.innerText = ""; }
+            if(r.status === 'success') { Swal.fire('Berhasil!', 'Penyerahan berhasil dicatat!', 'success'); document.getElementById('logistikModal').classList.add('spa-hidden'); loadMasterData(false); } else { Swal.fire('Gagal', r.message, 'error'); }
+        } catch (err) { Swal.fire('Error', 'Terjadi kesalahan jaringan.', 'error'); }
     });
 }
 
@@ -549,6 +540,9 @@ function renderVisitAndRiwayat(data) {
 
         if(isFuture && m.status_visit !== 'Sudah') return;
 
+        // Escaping quote (mengamankan nama yang ada tanda kutip untuk disisipkan ke HTML)
+        let safeNama = m.nama_lengkap.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
         if (m.status_visit === 'Sudah') {
             hasHasil = true;
             if(tbodyHsl) {
@@ -558,13 +552,13 @@ function renderVisitAndRiwayat(data) {
             hasRiwayat = true;
             if(tbodyRwt) {
                 let statBadge = `<span class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-200"><i class="ph-fill ph-warning-circle"></i> Belum Tervisit</span>`;
-                let aksiBtn = `<button type="button" class="btn-lapor-visit bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-sm transition-colors" data-id="${m.id_visit}" data-nama="${m.nama_lengkap.replace(/"/g, '&quot;')}" data-tim="${m.tim_alokasi}"><i class="ph ph-note-pencil mr-1 align-middle"></i>Lapor</button>`;
+                let aksiBtn = `<button type="button" onclick="bukaLaporVisit('${m.id_visit}', '${safeNama}', '${m.tim_alokasi}')" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-sm transition-colors"><i class="ph ph-note-pencil mr-1 align-middle"></i>Lapor</button>`;
                 tbodyRwt.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-3 text-center text-slate-500">${noRwt++}</td><td class="p-3 font-semibold text-slate-800">${m.nama_lengkap}</td><td class="p-3 text-center">${m.lp}</td><td class="p-3 text-slate-600">${m.asal_sekolah}</td><td class="p-3">${m.nama_ayah || '-'}</td><td class="p-3">${m.nama_ibu || '-'}</td><td class="p-3 text-xs max-w-[150px] truncate" title="${m.alamat}">${m.alamat}</td><td class="p-3 text-center">${statBadge}</td><td class="p-3 text-center">${aksiBtn}</td></tr>`;
             }
         } else {
             hasTarget = true;
             if(tbodyTgt) {
-                let aksiBtn = `<button type="button" class="btn-lapor-visit bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-sm transition-colors" data-id="${m.id_visit}" data-nama="${m.nama_lengkap.replace(/"/g, '&quot;')}" data-tim="${m.tim_alokasi}"><i class="ph ph-note-pencil mr-1 align-middle"></i>Lapor</button>`;
+                let aksiBtn = `<button type="button" onclick="bukaLaporVisit('${m.id_visit}', '${safeNama}', '${m.tim_alokasi}')" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-sm transition-colors"><i class="ph ph-note-pencil mr-1 align-middle"></i>Lapor</button>`;
                 tbodyTgt.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-3 text-center text-slate-500">${noTgt++}</td><td class="p-3 font-semibold text-slate-800">${m.nama_lengkap}</td><td class="p-3 text-center">${m.lp}</td><td class="p-3 text-slate-600">${m.asal_sekolah}</td><td class="p-3">${m.nama_ayah || '-'}</td><td class="p-3">${m.nama_ibu || '-'}</td><td class="p-3 text-xs max-w-[200px] truncate" title="${m.alamat}">${m.alamat}</td><td class="p-3 text-center">${aksiBtn}</td></tr>`;
             }
         }
@@ -615,15 +609,16 @@ function toggleSekolahLain(val) {
 
 if(document.getElementById('formLaporVisit')) {
     document.getElementById('formLaporVisit').addEventListener('submit', async (e) => {
-        e.preventDefault(); const btn = document.getElementById('btnSubmitVisit'); const stat = document.getElementById('visitStatusTxt');
-        btn.disabled = true; stat.innerHTML = "Mengirim..."; 
+        e.preventDefault(); 
+        Swal.fire({ title: 'Memproses Laporan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        
         const user = JSON.parse(sessionStorage.getItem('spmb_session')); const timAnak = document.getElementById('formLaporVisit').dataset.tim;
         const payload = new URLSearchParams(); payload.append('action', 'submit_laporan_visit'); payload.append('id_visit', selectedVisitId); payload.append('petugas', user.nama_lengkap + " (" + user.role + ")"); payload.append('tim_asal', timAnak); payload.append('hasil', document.getElementById('hasil_visit').value); payload.append('keterangan', document.getElementById('keterangan_visit').value);
         if(document.getElementById('hasil_visit').value === "Sekolah Lain") { payload.append('pilihan_1', document.getElementById('pil_1').value); payload.append('pilihan_2', document.getElementById('pil_2').value); payload.append('pilihan_3', document.getElementById('pil_3').value); }
         try {
             const res = await fetch(SCRIPT_URL.trim(), { method: 'POST', body: payload }); const r = await res.json();
-            if(r.status === 'success') { showToast('Laporan berhasil dikirim!', 'success'); document.getElementById('laporVisitModal').classList.add('spa-hidden'); loadVisitData(false); if(document.getElementById('hasil_visit').value === "Langsung Mendaftar") loadMasterData(false); } else { Swal.fire('Gagal', r.message, 'error'); }
-        } catch (err) { Swal.fire('Error', 'Terjadi kesalahan jaringan.', 'error'); } finally { btn.disabled = false; stat.innerHTML = `<i class="ph ph-paper-plane-right align-middle mr-1"></i> Kirim Laporan`; }
+            if(r.status === 'success') { Swal.fire('Berhasil!', 'Laporan kunjungan berhasil dikirim!', 'success'); document.getElementById('laporVisitModal').classList.add('spa-hidden'); loadVisitData(false); if(document.getElementById('hasil_visit').value === "Langsung Mendaftar") loadMasterData(false); } else { Swal.fire('Gagal', r.message, 'error'); }
+        } catch (err) { Swal.fire('Error', 'Terjadi kesalahan jaringan.', 'error'); }
     });
 }
 
@@ -641,12 +636,12 @@ async function loadUsersData() {
 
 if(document.getElementById('formAddUser')) {
     document.getElementById('formAddUser').addEventListener('submit', async(e) => {
-        e.preventDefault(); const btn = document.getElementById('btnSaveUser'); btn.disabled = true; btn.innerText="Loading...";
+        e.preventDefault(); Swal.fire({ title: 'Membuat User...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         const payload = new URLSearchParams(); payload.append('action', 'save_user'); payload.append('u_username', document.getElementById('u_username').value); payload.append('u_password', document.getElementById('u_password').value); payload.append('u_nama', document.getElementById('u_nama').value); payload.append('u_role', document.getElementById('u_role').value); payload.append('u_tim', document.getElementById('u_tim').value);
         try {
             const res = await fetch(SCRIPT_URL.trim(), {method:'POST', body:payload}); const r = await res.json();
-            if(r.status === 'success') { showToast('Pengguna berhasil ditambah!'); document.getElementById('formAddUser').reset(); loadUsersData(); } else Swal.fire('Gagal', r.message, 'error');
-        } catch(e) { Swal.fire('Error', 'Error koneksi', 'error'); } finally { btn.disabled = false; btn.innerText="Buat User"; }
+            if(r.status === 'success') { Swal.fire('Berhasil!', 'Pengguna berhasil ditambah!', 'success'); document.getElementById('formAddUser').reset(); loadUsersData(); } else Swal.fire('Gagal', r.message, 'error');
+        } catch(e) { Swal.fire('Error', 'Error koneksi', 'error'); }
     });
 }
 
@@ -659,12 +654,12 @@ function editUser(username, password, nama, role, tim) {
 
 if(document.getElementById('formEditUserLogic')) {
     document.getElementById('formEditUserLogic').addEventListener('submit', async(e) => {
-        e.preventDefault(); const btn = document.getElementById('btnUpdateUser'); btn.disabled = true; btn.innerText="Menyimpan...";
+        e.preventDefault(); Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         const payload = new URLSearchParams(); payload.append('action', 'update_user'); payload.append('old_username', document.getElementById('edit_old_username').value); payload.append('u_username', document.getElementById('edit_u_username').value); payload.append('u_password', document.getElementById('edit_u_password').value); payload.append('u_nama', document.getElementById('edit_u_nama').value); payload.append('u_role', document.getElementById('edit_u_role').value); payload.append('u_tim', document.getElementById('edit_u_tim').value);
         try {
             const res = await fetch(SCRIPT_URL.trim(), {method:'POST', body:payload}); const r = await res.json();
-            if(r.status === 'success') { showToast('Pengguna berhasil diubah!'); document.getElementById('modalEditUser').classList.add('spa-hidden'); loadUsersData(); } else Swal.fire('Gagal', r.message, 'error');
-        } catch(e) { Swal.fire('Error', 'Error koneksi', 'error'); } finally { btn.disabled = false; btn.innerText="Simpan Perubahan"; }
+            if(r.status === 'success') { Swal.fire('Berhasil!', 'Data Pengguna berhasil diubah!', 'success'); document.getElementById('modalEditUser').classList.add('spa-hidden'); loadUsersData(); } else Swal.fire('Gagal', r.message, 'error');
+        } catch(e) { Swal.fire('Error', 'Error koneksi', 'error'); }
     });
 }
 
