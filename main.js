@@ -7,8 +7,15 @@ let masterData = [], visitData = [], stockData = [];
 let editModeId = null, logistikId = null, selectedVisitId = null;
 let currentUserTeam = "", currentUserRole = "";
 
-const listAtributLogistik = ["Topi", "Dasi", "Ikat Pinggang", "Bet Identitas", "Bet Nama OSIS", "Bet Nama Identitas", "Bet Nama Pramuka", "Bet Nama Sekolah", "Kerudung OSIS", "Kerudung Olahraga", "Kerudung Identitas", "Kerudung Pramuka"];
-const baseItemsLogistik = ["Atasan OSIS", "Bawahan OSIS", "Atasan Olahraga", "Bawahan Olahraga", ...listAtributLogistik];
+const listAtributLogistik = [
+    "Topi", "Dasi", "Ikat Pinggang", "Bet Identitas", 
+    "Bet Nama OSIS", "Bet Nama Identitas", "Bet Nama Pramuka", "Bet Nama Sekolah", 
+    "Kerudung OSIS", "Kerudung Olahraga", "Kerudung Identitas", "Kerudung Pramuka"
+];
+
+const baseItemsLogistik = [
+    "Atasan OSIS", "Bawahan OSIS", "Atasan Olahraga", "Bawahan Olahraga", ...listAtributLogistik
+];
 
 // ========================================================
 // UI KONTROL (SIDEBAR & TOAST)
@@ -95,11 +102,6 @@ function setSelect2Value(id, value) {
 // ========================================================
 // CORE: PENDAFTAR MURID BARU & EDIT DATA
 // ========================================================
-function toggleWali(status) {
-    const formWali = document.getElementById('formWali'); if(!formWali) return;
-    if (status === "Bersama Wali/Kerabat") { formWali.classList.remove('hidden'); } else { formWali.classList.add('hidden'); if(document.getElementById('nama_wali')) document.getElementById('nama_wali').value = ''; if(document.getElementById('hp_wali')) document.getElementById('hp_wali').value = ''; if(document.getElementById('alamat_wali')) document.getElementById('alamat_wali').value = ''; }
-}
-
 window.bukaFormBaru = function() {
     editModeId = null; const form = document.getElementById('muridForm'); if(form) form.reset(); 
     document.querySelectorAll('input[name="chk_entitas"]').forEach(c => c.checked = false); 
@@ -108,6 +110,11 @@ window.bukaFormBaru = function() {
     const btnSubmit = document.getElementById('btnSubmitMurid'); if(btnSubmit) btnSubmit.innerHTML = `<i class="ph ph-floppy-disk text-xl"></i> Simpan Data Pendaftar`; 
     switchView('form'); if (typeof $ !== 'undefined') $('select').trigger('change');
 };
+
+function toggleWali(status) {
+    const formWali = document.getElementById('formWali'); if(!formWali) return;
+    if (status === "Bersama Wali/Kerabat") { formWali.classList.remove('hidden'); } else { formWali.classList.add('hidden'); if(document.getElementById('nama_wali')) document.getElementById('nama_wali').value = ''; if(document.getElementById('hp_wali')) document.getElementById('hp_wali').value = ''; if(document.getElementById('alamat_wali')) document.getElementById('alamat_wali').value = ''; }
+}
 
 const muridForm = document.getElementById('muridForm');
 if(muridForm) {
@@ -265,6 +272,32 @@ if(formProfile){
 // ========================================================
 // CORE: GLOBAL LOGIN & SETUP APP
 // ========================================================
+function applySettings(settings) {
+    if(settings.app_name) { 
+        if(document.getElementById('loginAppName')) document.getElementById('loginAppName').innerText = settings.app_name; 
+        if(document.getElementById('sidebarAppName')) document.getElementById('sidebarAppName').innerText = settings.app_name; 
+        if(document.getElementById('appDocumentTitle')) document.getElementById('appDocumentTitle').innerText = settings.app_name; 
+    }
+    if(settings.logo_url) {
+        const lgLogin = document.getElementById('loginLogoImage'); const lgSidebar = document.getElementById('sidebarLogoImage');
+        if(lgLogin) { lgLogin.src = settings.logo_url; lgLogin.classList.remove('hidden'); }
+        if(document.getElementById('loginLogoIcon')) document.getElementById('loginLogoIcon').classList.add('hidden');
+        if(lgSidebar) { lgSidebar.src = settings.logo_url; lgSidebar.classList.remove('hidden'); }
+        if(document.getElementById('sidebarLogoIcon')) document.getElementById('sidebarLogoIcon').classList.add('hidden');
+    }
+    if(settings.favicon_url) { if(document.getElementById('appFavicon')) document.getElementById('appFavicon').href = settings.favicon_url; }
+    
+    if(document.getElementById('set_app_name')) document.getElementById('set_app_name').value = settings.app_name || "";
+    if(document.getElementById('set_app_desc')) document.getElementById('set_app_desc').value = settings.app_desc || "";
+    if(document.getElementById('set_logo_url')) document.getElementById('set_logo_url').value = settings.logo_url || "";
+    if(document.getElementById('set_favicon_url')) document.getElementById('set_favicon_url').value = settings.favicon_url || "";
+    if(document.getElementById('set_sekolah_nama')) document.getElementById('set_sekolah_nama').value = settings.sekolah_nama || "";
+    if(document.getElementById('set_sekolah_akreditasi')) document.getElementById('set_sekolah_akreditasi').value = settings.sekolah_akreditasi || "";
+    if(document.getElementById('set_sekolah_alamat')) document.getElementById('set_sekolah_alamat').value = settings.sekolah_alamat || "";
+    if(document.getElementById('set_sekolah_email')) document.getElementById('set_sekolah_email').value = settings.sekolah_email || "";
+    if(document.getElementById('set_sekolah_website')) document.getElementById('set_sekolah_website').value = settings.sekolah_website || "";
+}
+
 document.addEventListener('DOMContentLoaded', async () => { 
     initSelect2Global();
     if (typeof $ !== 'undefined') { document.addEventListener('reset', function(e) { setTimeout(() => { $(e.target).find('select').trigger('change'); }, 10); }); }
@@ -304,11 +337,14 @@ async function tampilkanApp(userData) {
     const appView = document.getElementById('appView'); if(appView) appView.classList.remove('spa-hidden');
     const uNameDisplay = document.getElementById('userNameDisplay'); if(uNameDisplay) uNameDisplay.innerText = userData.nama_lengkap; 
     const uRoleBadge = document.getElementById('userRoleBadge'); if(uRoleBadge) uRoleBadge.innerText = userData.role;
+    
     let profIcon = document.getElementById('sidebarAvatarIcon'); let profImg = document.getElementById('sidebarAvatar');
     if(userData.foto_profil && userData.foto_profil.trim() !== "") {
         if(profIcon) profIcon.classList.add('hidden'); if(profImg) { profImg.src = userData.foto_profil; profImg.classList.remove('hidden'); }
     } else { if(profIcon) profIcon.classList.remove('hidden'); if(profImg) profImg.classList.add('hidden'); }
+
     currentUserTeam = userData.tim_visitor || ""; currentUserRole = userData.role || ""; let roleStr = currentUserRole.trim().toLowerCase(); 
+    
     const allNavs = ['navDashboard','navTabel','navKelolaVisit','navStokLogistik','navLogistik','navVisitGuru','navHasilVisit','navRiwayatVisit','navSettings'];
     const allLabels = ['labelMenuUtama', 'labelMenuLogistik', 'labelMenuVisit', 'labelMenuAdmin'];
     allNavs.forEach(n => { const el = document.getElementById(n); if(el) el.classList.add('hidden'); });
@@ -342,6 +378,23 @@ async function tampilkanApp(userData) {
         loadVisitData(false);
     }
     switchView('dashboard'); fetchReferences(); await loadStokData(); await loadMasterData(false);
+}
+
+const formSettings = document.getElementById('formSettings');
+if(formSettings) {
+    formSettings.addEventListener('submit', async(e) => {
+        e.preventDefault(); 
+        if(typeof Swal !== 'undefined') Swal.fire({ title: 'Menyimpan Pengaturan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        
+        const payload = new URLSearchParams(); payload.append('action', 'save_settings'); payload.append('app_name', document.getElementById('set_app_name') ? document.getElementById('set_app_name').value : ""); payload.append('app_desc', document.getElementById('set_app_desc') ? document.getElementById('set_app_desc').value : ""); payload.append('logo_url', document.getElementById('set_logo_url') ? document.getElementById('set_logo_url').value : ""); payload.append('favicon_url', document.getElementById('set_favicon_url') ? document.getElementById('set_favicon_url').value : ""); payload.append('sekolah_nama', document.getElementById('set_sekolah_nama') ? document.getElementById('set_sekolah_nama').value : ""); payload.append('sekolah_akreditasi', document.getElementById('set_sekolah_akreditasi') ? document.getElementById('set_sekolah_akreditasi').value : ""); payload.append('sekolah_alamat', document.getElementById('set_sekolah_alamat') ? document.getElementById('set_sekolah_alamat').value : ""); payload.append('sekolah_email', document.getElementById('set_sekolah_email') ? document.getElementById('set_sekolah_email').value : ""); payload.append('sekolah_website', document.getElementById('set_sekolah_website') ? document.getElementById('set_sekolah_website').value : "");
+        try {
+            const res = await fetch(SCRIPT_URL.trim(), {method:'POST', body:payload}); const r = await res.json();
+            if(r.status === 'success') { 
+                if(typeof Swal !== 'undefined') Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Pengaturan tersimpan!' });
+                applySettings({ app_name: document.getElementById('set_app_name') ? document.getElementById('set_app_name').value : "", app_desc: document.getElementById('set_app_desc') ? document.getElementById('set_app_desc').value : "", logo_url: document.getElementById('set_logo_url') ? document.getElementById('set_logo_url').value : "", favicon_url: document.getElementById('set_favicon_url') ? document.getElementById('set_favicon_url').value : "", sekolah_nama: document.getElementById('set_sekolah_nama') ? document.getElementById('set_sekolah_nama').value : "", sekolah_akreditasi: document.getElementById('set_sekolah_akreditasi') ? document.getElementById('set_sekolah_akreditasi').value : "", sekolah_alamat: document.getElementById('set_sekolah_alamat') ? document.getElementById('set_sekolah_alamat').value : "", sekolah_email: document.getElementById('set_sekolah_email') ? document.getElementById('set_sekolah_email').value : "", sekolah_website: document.getElementById('set_sekolah_website') ? document.getElementById('set_sekolah_website').value : "" }); 
+            } else { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Gagal', text: r.message }); }
+        } catch(err) { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal terhubung ke Server' }); }
+    });
 }
 
 function startAutoSync() {
@@ -415,34 +468,28 @@ window.deleteData = async function(id) {
     if(typeof Swal === 'undefined') return;
     const result = await Swal.fire({ title: 'Hapus Permanen?', text: `Anda yakin ingin menghapus data ${id} secara permanen?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Hapus!' });
     if (!result.isConfirmed) return;
+    
     Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
     try {
         const payload = new URLSearchParams(); payload.append('action', 'delete_murid'); payload.append('id_pendaftaran', id);
         const res = await fetch(SCRIPT_URL.trim(), { method: 'POST', body: payload }); const r = await res.json();
-        if(r.status === 'success') { Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success'); loadMasterData(false); } else { Swal.fire('Gagal', r.message, 'error'); }
+        if(r.status === 'success') { Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success'); loadMasterData(false); } 
+        else { Swal.fire('Gagal', r.message, 'error'); }
     } catch(e) { Swal.fire('Error', 'Koneksi terputus', 'error'); }
 };
 
 // ========================================================
 // AMAN: Event Delegation JS murni untuk Lapor Visit
 // ========================================================
-document.addEventListener('click', function(e) {
-    let btnLap = e.target.closest('.btn-lapor-visit');
-    if(btnLap) {
-        e.preventDefault();
-        let id = btnLap.getAttribute('data-id');
-        let nama = btnLap.getAttribute('data-nama');
-        let tim = btnLap.getAttribute('data-tim');
-        
-        selectedVisitId = id; 
-        let lblNama = document.getElementById('visitNamaLabel'); if(lblNama) lblNama.innerText = nama; 
-        let frmLapor = document.getElementById('formLaporVisit'); if(frmLapor) { frmLapor.dataset.tim = tim; frmLapor.reset(); }
-        
-        window.toggleSekolahLain(""); 
-        let modLapor = document.getElementById('laporVisitModal'); if(modLapor) modLapor.classList.remove('spa-hidden');
-        initSelect2Global();
-    }
-});
+window.bukaLaporVisitSafe = function(id, encNama, tim) {
+    let nama = decodeURIComponent(encNama);
+    selectedVisitId = id; 
+    let lblNama = document.getElementById('visitNamaLabel'); if(lblNama) lblNama.innerText = nama; 
+    let frmLapor = document.getElementById('formLaporVisit'); if(frmLapor) { frmLapor.dataset.tim = tim; frmLapor.reset(); }
+    window.toggleSekolahLain(""); 
+    let modLapor = document.getElementById('laporVisitModal'); if(modLapor) modLapor.classList.remove('spa-hidden');
+    initSelect2Global();
+};
 
 window.toggleSekolahLain = function(val) { 
     const area = document.getElementById('areaSekolahLain'); if(!area) return;
@@ -450,81 +497,119 @@ window.toggleSekolahLain = function(val) {
     if (typeof $ !== 'undefined') $('select').trigger('change');
 };
 
-const formLaporVisit = document.getElementById('formLaporVisit');
-if(formLaporVisit) {
-    formLaporVisit.addEventListener('submit', async (e) => {
+const fLaporVisit = document.getElementById('formLaporVisit');
+if(fLaporVisit) {
+    fLaporVisit.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         if(typeof Swal !== 'undefined') Swal.fire({ title: 'Mengirim Laporan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         
-        const user = JSON.parse(sessionStorage.getItem('spmb_session')); const timAnak = formLaporVisit.dataset.tim;
-        const payload = new URLSearchParams(); payload.append('action', 'submit_laporan_visit'); payload.append('id_visit', selectedVisitId); payload.append('petugas', user.nama_lengkap + " (" + user.role + ")"); payload.append('tim_asal', timAnak); 
-        let hasilVal = document.getElementById('hasil_visit') ? document.getElementById('hasil_visit').value : ""; payload.append('hasil', hasilVal); 
-        let ketVal = document.getElementById('keterangan_visit') ? document.getElementById('keterangan_visit').value : ""; payload.append('keterangan', ketVal);
-        if(hasilVal === "Sekolah Lain") { payload.append('pilihan_1', document.getElementById('pil_1') ? document.getElementById('pil_1').value : ""); payload.append('pilihan_2', document.getElementById('pil_2') ? document.getElementById('pil_2').value : ""); payload.append('pilihan_3', document.getElementById('pil_3') ? document.getElementById('pil_3').value : ""); }
+        const user = JSON.parse(sessionStorage.getItem('spmb_session')); const timAnak = fLaporVisit.dataset.tim;
+
+        const payload = new URLSearchParams(); 
+        payload.append('action', 'submit_laporan_visit'); 
+        payload.append('id_visit', selectedVisitId); 
+        payload.append('petugas', user.nama_lengkap + " (" + user.role + ")"); 
+        payload.append('tim_asal', timAnak); 
+        
+        let hasilVal = document.getElementById('hasil_visit') ? document.getElementById('hasil_visit').value : "";
+        let ketVal = document.getElementById('keterangan_visit') ? document.getElementById('keterangan_visit').value : "";
+        payload.append('hasil', hasilVal); payload.append('keterangan', ketVal);
+        
+        if(hasilVal === "Sekolah Lain") { 
+            payload.append('pilihan_1', document.getElementById('pil_1') ? document.getElementById('pil_1').value : ""); 
+            payload.append('pilihan_2', document.getElementById('pil_2') ? document.getElementById('pil_2').value : ""); 
+            payload.append('pilihan_3', document.getElementById('pil_3') ? document.getElementById('pil_3').value : ""); 
+        }
 
         try {
             const res = await fetch(SCRIPT_URL.trim(), { method: 'POST', body: payload }); const r = await res.json();
             if(r.status === 'success') { 
                 if(typeof Swal !== 'undefined') Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Laporan berhasil dikirim!' });
-                let modLap = document.getElementById('laporVisitModal'); if(modLap) modLap.classList.add('spa-hidden'); 
+                let mLap = document.getElementById('laporVisitModal');
+                if(mLap) mLap.classList.add('spa-hidden'); 
                 loadVisitData(false); if(hasilVal === "Langsung Mendaftar") loadMasterData(false); 
             } else { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Gagal', text: r.message }); }
-        } catch (err) { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Error Jaringan', text: 'Gagal menghubungi server.' }); }
+        } catch (err) { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Error Jaringan', text: 'Terjadi kesalahan jaringan.' }); }
     });
 }
 
-const formManualVisit = document.getElementById('formManualVisit');
-if(formManualVisit) {
-    formManualVisit.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        if(typeof Swal !== 'undefined') Swal.fire({ title: 'Menyimpan Target...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-        const payload = new URLSearchParams(); payload.append('action', 'insert_target_visit');
-        payload.append('nama_lengkap', document.getElementById('v_nama') ? document.getElementById('v_nama').value : ""); payload.append('lp', document.getElementById('v_lp') ? document.getElementById('v_lp').value : ""); payload.append('asal_sekolah', document.getElementById('v_sd') ? document.getElementById('v_sd').value : ""); payload.append('tim_alokasi', document.getElementById('v_tim') ? document.getElementById('v_tim').value : ""); payload.append('nama_ayah', document.getElementById('v_ayah') ? document.getElementById('v_ayah').value : ""); payload.append('nama_ibu', document.getElementById('v_ibu') ? document.getElementById('v_ibu').value : ""); payload.append('alamat', document.getElementById('v_alamat') ? document.getElementById('v_alamat').value : ""); payload.append('tanggal_mulai', document.getElementById('v_mulai') ? document.getElementById('v_mulai').value : ""); payload.append('batas_waktu', document.getElementById('v_batas') ? document.getElementById('v_batas').value : ""); payload.append('desa_kelurahan', document.getElementById('v_desa') ? document.getElementById('v_desa').value : ""); payload.append('kecamatan', document.getElementById('v_kecamatan') ? document.getElementById('v_kecamatan').value : "");
-        try {
-            const res = await fetch(SCRIPT_URL.trim(), { method: 'POST', body: payload }); const r = await res.json();
-            if(r.status === 'success') { 
-                if(typeof Swal !== 'undefined') Swal.fire({ icon: 'success', title: 'Tersimpan!', text: 'Target Visit berhasil ditambah!' });
-                formManualVisit.reset(); if (typeof $ !== 'undefined') $('select').trigger('change'); loadVisitData(false); 
-            } else { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Gagal', text: r.message }); }
-        } catch(err) { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Error Jaringan', text: 'Gagal menghubungi server.' }); }
+function renderVisitAndRiwayat(data) {
+    const tbodyTgt = document.getElementById('tableVisitBody'); const tbodyRwt = document.getElementById('tableRiwayatVisitBody'); const tbodyHsl = document.getElementById('tableHasilVisitBody'); 
+    if(tbodyTgt) tbodyTgt.innerHTML = ''; if(tbodyRwt) tbodyRwt.innerHTML = ''; if(tbodyHsl) tbodyHsl.innerHTML = '';
+    const today = new Date(); today.setHours(0,0,0,0);
+    let hasTarget = false, hasRiwayat = false, hasHasil = false; let noTgt = 1, noRwt = 1, noHsl = 1; let actBatasWaktu = null; let timStats = {};
+
+    data.forEach((m) => {
+        let isExpired = false, isFuture = false;
+        if(m.tanggal_mulai) { const tm = new Date(m.tanggal_mulai); tm.setHours(0,0,0,0); if(today < tm) isFuture = true; }
+        if(m.batas_waktu) { const bw = new Date(m.batas_waktu); bw.setHours(0,0,0,0); if(today > bw) isExpired = true; if(!isFuture && !isExpired && !actBatasWaktu) actBatasWaktu = m.batas_waktu; }
+
+        let rCheck = currentUserRole.trim().toLowerCase();
+        if(rCheck === 'administrator' || rCheck === 'kepala sekolah' || rCheck === 'ketua panitia') {
+            let t = m.tim_alokasi || "Tanpa Tim"; if(!timStats[t]) timStats[t] = { total: 0, selesai: 0, belum: 0, listBelum: [] };
+            timStats[t].total++;
+            if(m.status_visit === 'Sudah') { timStats[t].selesai++; } else { timStats[t].belum++; timStats[t].listBelum.push({ id: m.id_visit, nama: m.nama_lengkap, lp: m.lp, desa: m.desa_kelurahan, sekolah: m.asal_sekolah }); }
+        }
+
+        if(isFuture && m.status_visit !== 'Sudah') return;
+
+        let encodedNama = encodeURIComponent(m.nama_lengkap || "");
+        let encodedTim = encodeURIComponent(m.tim_alokasi || "");
+        let aksiBtn = `<button type="button" onclick="window.bukaLaporVisitSafe('${m.id_visit}', '${encodedNama}', '${encodedTim}')" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-sm transition-colors"><i class="ph ph-note-pencil mr-1 align-middle"></i>Lapor</button>`;
+
+        if (m.status_visit === 'Sudah') {
+            hasHasil = true;
+            if(tbodyHsl) {
+                tbodyHsl.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-3 text-center text-slate-500">${noHsl++}</td><td class="p-3 font-semibold text-slate-800">${m.nama_lengkap}</td><td class="p-3 text-center">${m.lp}</td><td class="p-3 text-slate-600">${m.asal_sekolah}</td><td class="p-3">${m.nama_ayah || '-'}</td><td class="p-3">${m.nama_ibu || '-'}</td><td class="p-3 text-xs max-w-[150px] truncate" title="${m.alamat}">${m.alamat}</td><td class="p-3 text-xs text-blue-600 font-semibold">${m.pilihan_1 || '-'}</td><td class="p-3 text-xs">${m.pilihan_2 || '-'}</td><td class="p-3 text-xs">${m.pilihan_3 || '-'}</td><td class="p-3 text-xs max-w-[150px] truncate" title="${m.keterangan}">${m.keterangan || '-'}</td></tr>`;
+            }
+        } else if (isExpired) {
+            hasRiwayat = true;
+            if(tbodyRwt) {
+                let statBadge = `<span class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-200"><i class="ph-fill ph-warning-circle"></i> Belum Tervisit</span>`;
+                tbodyRwt.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-3 text-center text-slate-500">${noRwt++}</td><td class="p-3 font-semibold text-slate-800">${m.nama_lengkap}</td><td class="p-3 text-center">${m.lp}</td><td class="p-3 text-slate-600">${m.asal_sekolah}</td><td class="p-3">${m.nama_ayah || '-'}</td><td class="p-3">${m.nama_ibu || '-'}</td><td class="p-3 text-xs max-w-[150px] truncate" title="${m.alamat}">${m.alamat}</td><td class="p-3 text-center">${statBadge}</td><td class="p-3 text-center">${aksiBtn}</td></tr>`;
+            }
+        } else {
+            hasTarget = true;
+            if(tbodyTgt) {
+                tbodyTgt.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-3 text-center text-slate-500">${noTgt++}</td><td class="p-3 font-semibold text-slate-800">${m.nama_lengkap}</td><td class="p-3 text-center">${m.lp}</td><td class="p-3 text-slate-600">${m.asal_sekolah}</td><td class="p-3">${m.nama_ayah || '-'}</td><td class="p-3">${m.nama_ibu || '-'}</td><td class="p-3 text-xs max-w-[200px] truncate" title="${m.alamat}">${m.alamat}</td><td class="p-3 text-center">${aksiBtn}</td></tr>`;
+            }
+        }
     });
+
+    if(!hasTarget && tbodyTgt) tbodyTgt.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">Tidak ada target visitasi aktif sesuai jadwal.</td></tr>`;
+    if(!hasRiwayat && tbodyRwt) tbodyRwt.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">Belum ada riwayat (tenggat) visitasi.</td></tr>`;
+    if(!hasHasil && tbodyHsl) tbodyHsl.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400">Belum ada data hasil visitasi.</td></tr>`;
+    
+    let rCheck = currentUserRole.trim().toLowerCase();
+    let labelTim = (rCheck === 'administrator' || rCheck === 'kepala sekolah' || rCheck === 'ketua panitia') ? "Semua Tim (Monitoring)" : currentUserTeam;
+    let batasText = actBatasWaktu ? new Date(actBatasWaktu).toLocaleDateString('id-ID') : 'Tanpa Batas';
+    
+    if(document.getElementById('visitTeamLabel')) { document.getElementById('visitTeamLabel').innerHTML = `Alokasi Wilayah: <span class="font-bold mr-3 text-purple-700">${labelTim}</span>  Batas Waktu Target Aktif: <span class="font-bold text-red-500">${batasText}</span>`; }
+    if(document.getElementById('riwayatInfoLabel')) { document.getElementById('riwayatInfoLabel').innerHTML = `Berisi data target yang sudah melewati batas waktu dan belum dilaporkan.`; }
+
+    if(rCheck === 'administrator') {
+        const vContainer = document.getElementById('visitStatsContainer');
+        if(vContainer) {
+            vContainer.innerHTML = ''; window.tempTimStats = timStats;
+            Object.keys(timStats).forEach(t => {
+                let btnHtml = timStats[t].belum > 0 ? `<button onclick="showDetailVisitTeam('${t}')" class="w-full mt-2 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold py-1 rounded transition-colors">Lihat Sisa Target</button>` : `<div class="w-full mt-2 text-center text-xs text-green-600 font-bold py-1"><i class="ph-fill ph-check-circle align-middle"></i> Selesai Semua</div>`;
+                vContainer.innerHTML += `<div class="bg-white p-4 border border-slate-200 rounded-xl shadow-sm border-l-4 border-l-purple-500"><h4 class="font-bold text-slate-800 mb-2">${t}</h4><div class="flex justify-between text-sm"><span class="text-slate-500">Selesai:</span> <span class="font-bold text-green-600">${timStats[t].selesai}</span></div><div class="flex justify-between text-sm"><span class="text-slate-500">Sisa Target:</span> <span class="font-bold text-red-500">${timStats[t].belum}</span></div><div class="mt-2 pt-2 border-t text-xs text-slate-400 mb-2">Total Alokasi: ${timStats[t].total} Data</div>${btnHtml}</div>`;
+            });
+        }
+    }
 }
 
-window.downloadFormatExcel = function() {
-    const ws_data = [
-        ["Tim_Alokasi", "Nama_Lengkap", "L_P", "Asal_Sekolah", "Nama_Ayah", "Nama_Ibu", "Alamat", "Tanggal_Mulai", "Batas_Waktu", "Desa_Kelurahan", "Kecamatan"],
-        ["Tim 1", "Budi Santoso", "Laki-laki", "SD Negeri 1 Kebumen", "Joko", "Siti", "Dusun Krajan RT 01 RW 02", "2024-05-01", "2024-05-15", "Aditirto", "Pejagoan"]
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(ws_data); const wscols = [ {wch: 15}, {wch: 25}, {wch: 10}, {wch: 25}, {wch: 20}, {wch: 20}, {wch: 35}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 20} ]; ws['!cols'] = wscols;
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data_Target_Visit"); XLSX.writeFile(wb, "Format_Import_Visit.xlsx");
+window.showDetailVisitTeam = function(teamName) {
+    const list = window.tempTimStats[teamName].listBelum; window.tempDataGlobal["visit_" + teamName] = list; showDetailTable("Sisa Target Visit: " + teamName, "visit_" + teamName);
 };
 
-const btnImportExcel = document.getElementById('btnImportExcel');
-if(btnImportExcel) {
-    btnImportExcel.addEventListener('click', () => {
-        const fileInput = document.getElementById('fileExcelVisit');
-        if(!fileInput || !fileInput.files.length) { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Pilih file Excel terlebih dahulu!' }); return; }
-        if(typeof Swal !== 'undefined') Swal.fire({ title: 'Memproses Excel...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-        const file = fileInput.files[0]; const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
-                const sheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName];
-                const json = XLSX.utils.sheet_to_json(worksheet, {raw: false});
-                if(json.length === 0) throw new Error("Excel Kosong");
-                const payload = new URLSearchParams(); payload.append('action', 'import_target_visit'); payload.append('data_json', JSON.stringify(json));
-                const res = await fetch(SCRIPT_URL.trim(), { method: 'POST', body: payload }); const r = await res.json();
-                if(r.status === 'success') { 
-                    if(typeof Swal !== 'undefined') Swal.fire({ icon: 'success', title: 'Berhasil!', text: r.message });
-                    fileInput.value = ""; loadVisitData(false); 
-                } else { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Gagal', text: r.message }); }
-            } catch(err) { if(typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Format Salah', text: 'Gagal memproses file Excel. Pastikan format benar.' }); }
-        };
-        reader.readAsArrayBuffer(file);
-    });
-}
+if(document.getElementById('searchVisit')) { document.getElementById('searchVisit').addEventListener('input', (e) => { const k = e.target.value.toLowerCase(); renderVisitAndRiwayat(visitData.filter(m => m.nama_lengkap.toLowerCase().includes(k) || m.asal_sekolah.toLowerCase().includes(k))); }); }
+if(document.getElementById('searchRiwayatVisit')) { document.getElementById('searchRiwayatVisit').addEventListener('input', (e) => { const k = e.target.value.toLowerCase(); renderVisitAndRiwayat(visitData.filter(m => m.nama_lengkap.toLowerCase().includes(k) || m.asal_sekolah.toLowerCase().includes(k))); }); }
+if(document.getElementById('searchHasilVisit')) { document.getElementById('searchHasilVisit').addEventListener('input', (e) => { const k = e.target.value.toLowerCase(); renderVisitAndRiwayat(visitData.filter(m => m.nama_lengkap.toLowerCase().includes(k) || m.asal_sekolah.toLowerCase().includes(k))); }); }
 
-// User Admin Logic
+// ========================================================
+// MANAJEMEN USER DEWA
+// ========================================================
 async function loadUsersData() {
     try {
         const res = await fetch(SCRIPT_URL.trim() + "?action=get_users"); const r = await res.json();
@@ -537,10 +622,11 @@ async function loadUsersData() {
     } catch(e) {}
 }
 
-const fAddUser = document.getElementById('formAddUser');
+let fAddUser = document.getElementById('formAddUser');
 if(fAddUser) {
     fAddUser.addEventListener('submit', async(e) => {
-        e.preventDefault(); if(typeof Swal !== 'undefined') Swal.fire({ title: 'Membuat User...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        e.preventDefault(); 
+        if(typeof Swal !== 'undefined') Swal.fire({ title: 'Membuat User...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         let uUser = document.getElementById('u_username') ? document.getElementById('u_username').value : ""; let uPass = document.getElementById('u_password') ? document.getElementById('u_password').value : ""; let uNama = document.getElementById('u_nama') ? document.getElementById('u_nama').value : ""; let uRole = document.getElementById('u_role') ? document.getElementById('u_role').value : ""; let uTim = document.getElementById('u_tim') ? document.getElementById('u_tim').value : "";
         const payload = new URLSearchParams(); payload.append('action', 'save_user'); payload.append('u_username', uUser); payload.append('u_password', uPass); payload.append('u_nama', uNama); payload.append('u_role', uRole); payload.append('u_tim', uTim);
         try {
@@ -560,10 +646,11 @@ window.editUser = function(username, password, nama, role, tim) {
     let mEu = document.getElementById('modalEditUser'); if(mEu) mEu.classList.remove('spa-hidden'); initSelect2Global();
 };
 
-const fEditUser = document.getElementById('formEditUserLogic');
+let fEditUser = document.getElementById('formEditUserLogic');
 if(fEditUser) {
     fEditUser.addEventListener('submit', async(e) => {
-        e.preventDefault(); if(typeof Swal !== 'undefined') Swal.fire({ title: 'Menyimpan Perubahan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        e.preventDefault(); 
+        if(typeof Swal !== 'undefined') Swal.fire({ title: 'Menyimpan Perubahan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         let eOldUser = document.getElementById('edit_old_username') ? document.getElementById('edit_old_username').value : ""; let eUser = document.getElementById('edit_u_username') ? document.getElementById('edit_u_username').value : ""; let ePass = document.getElementById('edit_u_password') ? document.getElementById('edit_u_password').value : ""; let eNama = document.getElementById('edit_u_nama') ? document.getElementById('edit_u_nama').value : ""; let eRole = document.getElementById('edit_u_role') ? document.getElementById('edit_u_role').value : ""; let eTim = document.getElementById('edit_u_tim') ? document.getElementById('edit_u_tim').value : "";
         const payload = new URLSearchParams(); payload.append('action', 'update_user'); payload.append('old_username', eOldUser); payload.append('u_username', eUser); payload.append('u_password', ePass); payload.append('u_nama', eNama); payload.append('u_role', eRole); payload.append('u_tim', eTim);
         try {
